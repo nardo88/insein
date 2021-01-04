@@ -8,7 +8,19 @@ const selectCities = document.getElementById('select-cities');
 const closeButton = document.querySelector('.close-button');
 const label = document.querySelector('.label');
 const button = document.querySelector('.button');
+const overlay = document.querySelector('.overlay');
 
+
+overlay.classList.add('overlay--active');
+
+fetch('db_cities.json')
+    .then(response => response.json())
+    .then(data => {
+        setTimeout(() => {
+            render(data);
+            overlay.classList.remove('overlay--active');
+        }, 1000)
+    })
 
 // показатель на каком языке мы будем отображать информацию
 let lang = 'RU';
@@ -16,12 +28,12 @@ let link = false;
 
 // открытие закрытие блока default
 const toggleOpenListDefault = () => {
-    ListDefault.classList.toggle('open')
+    ListDefault.classList.add('open')
 }
 
 // открытие закрытие блока select
 const toggleOpenListSelect = () => {
-    ListSelect.classList.toggle('open')
+    ListSelect.classList.add('open')
 }
 
 // функция рендера select
@@ -62,6 +74,7 @@ const renderAutocomplete = (text) => {
         data[lang].forEach(item => {
            item.cities.forEach(elem => {
                if (regExp.test(elem.name)){
+                 
                 arr.push(elem)
                }
            })
@@ -70,9 +83,10 @@ const renderAutocomplete = (text) => {
         dropdownListsCountryBlock.classList.add('dropdown-lists__countryBlock');
         if (arr.length){
             arr.forEach(item => {
+                let newStr = item.name.replace(regExp, match => `<b>${match}</b>`)
                 const child = `
                 <div class="dropdown-lists__line">
-                    <div data-link="${item.link}" class="dropdown-lists__city">${item.name}</div>
+                    <div data-link="${item.link}" class="dropdown-lists__city">${newStr}</div>
                     <div class="dropdown-lists__count">${item.count}</div>
                 </div>
                 `
@@ -91,13 +105,13 @@ const renderAutocomplete = (text) => {
 const showInputValue = value => {
     label.classList.add('label--top')
     selectCities.value = value
-    closeButton.classList.add('open')
+    closeButton.classList.add('open--btn')
 } 
 
 const showDefault = () => {
     ListDefault.classList.add('open')
     autocomplete.classList.remove('open');
-    ListSelect.classList.remove('open');
+    ListSelect.classList.add('open');
 }
 
 const setLink = value => {
@@ -110,7 +124,6 @@ main.addEventListener('click', e => {
     const target = e.target;
     if (target.matches('#select-cities')){
         showDefault();
-
     };
 
     // клик по названию страны
@@ -118,12 +131,20 @@ main.addEventListener('click', e => {
         let index = target.closest('.dropdown-lists__total-line').dataset.index;
         if(index){
             renderSelect(index)
+            ListDefault.style.left = '100%'
+            ListSelect.style.right = '0%'
+        } else {
+            ListDefault.style.left = '0%'
+            ListSelect.style.right = '100%'
+
         }
         showInputValue(target.closest('.dropdown-lists__total-line').children[0].textContent)
+
         toggleOpenListDefault()
         toggleOpenListSelect()
         
     }
+
 
     if (target.matches('.dropdown-lists__city--ip')){
         showInputValue(target.textContent)
@@ -132,13 +153,14 @@ main.addEventListener('click', e => {
     if (target.matches('.dropdown-lists__city')){
         showInputValue(target.textContent)
         setLink(target.dataset.link);
-
     }
 
+
+    // нажатие на крестик
     if (target === closeButton){
         label.classList.remove('label--top')
         selectCities.value = ''
-        closeButton.classList.remove('open')
+        closeButton.classList.remove('open--btn')
         showDefault();
         link = false;
     }
@@ -162,7 +184,7 @@ function byField(field) {
     return (a, b) => Number(a[field]) > Number(b[field]) ? 1 : -1;
 }
 
-const render = () => {
+const render = (data) => {
     data[lang].forEach((item, i )=> {
         // создаем блок total-line который будет содержать название страны
         const countryBlock = document.createElement('div');
@@ -197,5 +219,5 @@ button.addEventListener('click', e => {
     }
 })
 
-render()
+// render()
 
