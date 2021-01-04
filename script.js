@@ -109,9 +109,11 @@ const showInputValue = value => {
 } 
 
 const showDefault = () => {
-    ListDefault.classList.add('open')
-    autocomplete.classList.remove('open');
+    ListDefault.style.left = '0%'
+    ListSelect.style.right = '100%'
+    ListDefault.classList.add('open');
     ListSelect.classList.add('open');
+    autocomplete.classList.remove('open');
 }
 
 const setLink = value => {
