@@ -1,4 +1,3 @@
-import data from './db_cities.js';
 
 const main = document.querySelector('.main');
 const ListDefault = document.querySelector('.dropdown-lists__list--default');
@@ -11,27 +10,67 @@ const button = document.querySelector('.button');
 const overlay = document.querySelector('.overlay');
 
 
-overlay.classList.add('overlay--active');
-
-fetch('db_cities.json')
-    .then(response => response.json())
-    .then(data => {
-        setTimeout(() => {
-            render(data);
-            overlay.classList.remove('overlay--active');
-        }, 1000)
-    })
-
 // показатель на каком языке мы будем отображать информацию
 let lang = 'RU';
+// флаг включения/отключения кнопки
 let link = false;
 
-// открытие закрытие блока default
+let data = [];
+
+// включаем овердей
+overlay.classList.add('overlay--active');
+// если в куках есть lange
+if(document.cookie.split('=')[0] === 'lang'){
+    data = JSON.parse(localStorage.getItem('cities'));
+    render(data);
+    overlay.classList.remove('overlay--active');
+// если в куках нет leng
+} else {
+    // запускаем цикл пока не получим корректное значение
+    do {
+        // модальное окно (prompt) для выбора языка
+        lang = prompt('Enter your language for start application (RU, EN or DE)', 'EN');
+    } while (!/^ru$|^en$|^de$/gi.test(lang));
+    // на всякий случай переводим в верхни й регистр
+    lang = lang.toUpperCase();
+    // записываем значение в куки
+    document.cookie = `lang=${lang}`
+    // запрос на сервер
+    fetch('db_cities.json')
+    .then(response => response.json())
+    .then(dataBase => {
+        setTimeout(() => {
+            // записываем базу в LocalStorage
+            console.log(data);
+            data = dataBase[lang];
+            console.log(data);
+            switch(lang){
+                case 'EN':
+                    data.unshift(data[2]);
+                    data.splice(3,1)
+                    break
+                case 'DE':
+                    data.unshift(data[1]);
+                    data.splice(2,1)
+                    break
+            }
+            localStorage.setItem('cities', JSON.stringify(data))
+            // после получения данных мы отключаем оверлей и рендерим страницу
+            render(data);
+            overlay.classList.remove('overlay--active');
+
+        }, 1000)
+    })
+}
+
+
+
+// открытие блока default
 const toggleOpenListDefault = () => {
     ListDefault.classList.add('open')
 }
 
-// открытие закрытие блока select
+// открытие блока select
 const toggleOpenListSelect = () => {
     ListSelect.classList.add('open')
 }
@@ -40,7 +79,7 @@ const toggleOpenListSelect = () => {
 const renderSelect = (index) => {
     ListSelect.children[0].innerHTML = '';
     // диструктуризация, получаем значения объекта
-    const {cities, count, country} =  data[lang][index];
+    const {cities, count, country} =  data[index];
 
     const countryBlock = document.createElement('div');
     countryBlock.classList.add('dropdown-lists__countryBlock');
@@ -67,11 +106,12 @@ const renderSelect = (index) => {
 // функция рендера autocomplete
 const renderAutocomplete = (text) => {
     if (text){
+        closeButton.classList.add('open--btn')
         autocomplete.children[0].innerHTML = '';
         const arr = []
         const regExp = new RegExp('^' + text + '', 'i')
 
-        data[lang].forEach(item => {
+        data.forEach(item => {
            item.cities.forEach(elem => {
                if (regExp.test(elem.name)){
                  
@@ -102,12 +142,15 @@ const renderAutocomplete = (text) => {
     
 }
 
+// запись в инпут значения
 const showInputValue = value => {
     label.classList.add('label--top')
     selectCities.value = value
     closeButton.classList.add('open--btn')
 } 
 
+
+// сброс в дефолтное состояние
 const showDefault = () => {
     ListDefault.style.left = '0%'
     ListSelect.style.right = '100%'
@@ -116,12 +159,13 @@ const showDefault = () => {
     autocomplete.classList.remove('open');
 }
 
+// включение кнопки
 const setLink = value => {
     link = true;
     button.href = value
 }
 
-
+// слешатель на клик
 main.addEventListener('click', e => {
     const target = e.target;
     if (target.matches('#select-cities')){
@@ -147,11 +191,13 @@ main.addEventListener('click', e => {
         
     }
 
-
+    // клик по городу в селекте
     if (target.matches('.dropdown-lists__city--ip')){
         showInputValue(target.textContent)
         setLink(target.dataset.link);
     }
+
+    // клик по городу в autocomplete
     if (target.matches('.dropdown-lists__city')){
         showInputValue(target.textContent)
         setLink(target.dataset.link);
@@ -168,10 +214,12 @@ main.addEventListener('click', e => {
     }
 })
 
+// ввод значения в input
 selectCities.addEventListener('input', () => {
     if(!selectCities.value){
         ListDefault.classList.add('open')
         autocomplete.classList.remove('open')
+        closeButton.classList.remove('open--btn')
         link = false
     } else {
         ListDefault.classList.remove('open')
@@ -186,8 +234,10 @@ function byField(field) {
     return (a, b) => Number(a[field]) > Number(b[field]) ? 1 : -1;
 }
 
-const render = (data) => {
-    data[lang].forEach((item, i )=> {
+
+// рендер страницы
+function render (data) {
+    data.forEach((item, i )=> {
         // создаем блок total-line который будет содержать название страны
         const countryBlock = document.createElement('div');
         countryBlock.classList.add('dropdown-lists__countryBlock');
@@ -215,11 +265,11 @@ const render = (data) => {
     })
 }
 
+// нажатие на кнопку для ВИКИ
 button.addEventListener('click', e => {
     if (!link){
         e.preventDefault()
     }
 })
 
-// render()
 
